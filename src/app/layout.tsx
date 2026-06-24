@@ -33,7 +33,7 @@ export default function RootLayout({
           <Navbar />
 
           {/* 👇 THIS FIXES SPACING */}
-          <main className="pt-24 md:pt-24 pb-15 md:pb-0">
+          <main className="pt-15 md:pt-24 pb-15 md:pb-0">
             {children}
           </main>
         </body>
