@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import Navbar from "../components/Navbar";
+import { ClerkProvider } from "@clerk/nextjs";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,15 +21,23 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">{children}</body>
-    </html>
+    <ClerkProvider>
+      <html lang="en">
+        <body
+          className= {`bg-[#F5F7FB] ${geistSans.variable} ${geistMono.variable} antialiased`}
+        >
+          <Navbar />
+
+          {/* 👇 THIS FIXES SPACING */}
+          <main className="pt-20 md:pt-24">
+            {children}
+          </main>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }
