@@ -58,7 +58,7 @@ export default function ProfileHeader({
         <div className="flex flex-col items-center md:items-start text-center md:text-left">
           {/* Name */}
           <h1 className="text-2xl md:text-3xl font-semibold text-gray-900">
-            @{profileUser.username}
+            {profileUser.username}
           </h1>
 
           {/* Role */}
