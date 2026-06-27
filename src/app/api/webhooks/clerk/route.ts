@@ -57,28 +57,33 @@ export async function POST(req: Request) {
 
   const eventType = evt.type;
 
-  if (eventType === "user.created") {
-    const {
-      id,
-      email_addresses,
-      image_url,
-      username,
-      first_name,
-      last_name,
-    } = evt.data;
+ if (eventType === "user.created") {
+  const {
+    id,
+    email_addresses,
+    image_url,
+    username,
+    first_name,
+    last_name,
+  } = evt.data;
 
-    await prisma.user.create({
+  try {
+    const user = await prisma.user.create({
       data: {
         clerkId: id,
-        email:
-          email_addresses[0]?.email_address,
+        email: email_addresses[0].email_address,
         username,
         firstName: first_name,
         lastName: last_name,
         imageUrl: image_url,
       },
     });
+
+    console.log("Created user:", user);
+  } catch (error) {
+    console.error("Prisma Error:", error);
   }
+}
 
   return new Response("Webhook received", {
     status: 200,
