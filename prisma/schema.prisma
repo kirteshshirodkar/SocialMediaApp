@@ -1,4 +1,4 @@
-generator client {
+ generator client {
   provider = "prisma-client-js"
 }
 
@@ -8,32 +8,25 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  clerkId     String   @unique
-  username    String   @unique
-  firstName   String?
-  lastName    String?
-  email       String   @unique
+  id         String   @id @default(cuid())
+  clerkId    String   @unique
+  username   String   @unique
+  firstName  String?
+  lastName   String?
+  email      String   @unique
+  imageUrl   String?
+  bio        String?
+  createdAt  DateTime @default(now())
 
-  imageUrl    String?
-  coverImage  String?
-  bio         String?
-  website     String?
-  location    String?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  posts       Post[]
+  posts      Post[]
 }
 
 model Post {
-  id          String   @id @default(cuid())
-  content     String
-  imageUrl    String?
+  id         String   @id @default(cuid())
+  content    String
+  imageUrl   String?
+  createdAt  DateTime @default(now())
 
-  createdAt   DateTime @default(now())
-
-  userId      String
-  user         User @relation(fields: [userId], references: [id])
+  userId     String
+  user       User @relation(fields: [userId], references: [id])
 }
