@@ -2,21 +2,29 @@
 
 import { useState } from "react";
 import { Pencil, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-export default function EditProfile({
-  bio,
-}: {
-  bio: string | null;
-}) {
+
+
+export default function EditProfile({ bio }: { bio: string | null }) {
   const [open, setOpen] = useState(false);
   const [newBio, setNewBio] = useState(bio || "");
+  const router = useRouter();
 
   const handleSave = async () => {
-    // API call will go here later
-    console.log(newBio);
+  await fetch("/api/profile", {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      bio: newBio,
+    }),
+  });
 
-    setOpen(false);
-  };
+  router.refresh();
+  setOpen(false);
+};
 
   return (
     <>
@@ -30,26 +38,17 @@ export default function EditProfile({
 
       {open && (
         <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-
           <div className="bg-white rounded-2xl p-6 w-[90%] max-w-md shadow-xl">
-
             <div className="flex justify-between items-center">
-
-              <h2 className="text-xl font-semibold">
-                Edit Profile
-              </h2>
+              <h2 className="text-xl font-semibold">Edit Profile</h2>
 
               <button onClick={() => setOpen(false)}>
                 <X />
               </button>
-
             </div>
 
             <div className="mt-6">
-
-              <label className="block text-sm mb-2">
-                Bio
-              </label>
+              <label className="block text-sm mb-2">Bio</label>
 
               <textarea
                 rows={4}
@@ -58,7 +57,6 @@ export default function EditProfile({
                 className="w-full border rounded-xl p-3 outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="Frontend Developer..."
               />
-
             </div>
 
             <button
@@ -67,9 +65,7 @@ export default function EditProfile({
             >
               Save Changes
             </button>
-
           </div>
-
         </div>
       )}
     </>
