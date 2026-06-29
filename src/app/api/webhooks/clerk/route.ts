@@ -3,35 +3,20 @@ import { Webhook } from "svix";
 import { prisma } from "@/src/lib/prisma";
 
 export async function POST(req: Request) {
-  const WEBHOOK_SECRET =
-    process.env.CLERK_WEBHOOK_SECRET;
+  const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error(
-      "Please add CLERK_WEBHOOK_SECRET"
-    );
+    throw new Error("Please add CLERK_WEBHOOK_SECRET");
   }
 
-  // FIXED
   const headerPayload = await headers();
 
-  const svix_id =
-    headerPayload.get("svix-id");
+  const svixId = headerPayload.get("svix-id");
+  const svixTimestamp = headerPayload.get("svix-timestamp");
+  const svixSignature = headerPayload.get("svix-signature");
 
-  const svix_timestamp =
-    headerPayload.get("svix-timestamp");
-
-  const svix_signature =
-    headerPayload.get("svix-signature");
-
-  if (
-    !svix_id ||
-    !svix_timestamp ||
-    !svix_signature
-  ) {
-    return new Response("Missing Headers", {
-      status: 400,
-    });
+  if (!svixId || !svixTimestamp || !svixSignature) {
+    return new Response("Missing Svix Headers", { status: 400 });
   }
 
   const payload = await req.json();
@@ -43,49 +28,72 @@ export async function POST(req: Request) {
 
   try {
     evt = wh.verify(body, {
-      "svix-id": svix_id,
-      "svix-timestamp": svix_timestamp,
-      "svix-signature": svix_signature,
+      "svix-id": svixId,
+      "svix-timestamp": svixTimestamp,
+      "svix-signature": svixSignature,
     });
   } catch (err) {
-    console.error("Webhook Error:", err);
-
-    return new Response("Error", {
-      status: 400,
-    });
+    console.error("Webhook verification failed:", err);
+    return new Response("Invalid webhook", { status: 400 });
   }
 
-  const eventType = evt.type;
-
- if (eventType === "user.created") {
-  const {
-    id,
-    email_addresses,
-    image_url,
-    username,
-    first_name,
-    last_name,
-  } = evt.data;
+  const { type, data } = evt;
 
   try {
-    const user = await prisma.user.create({
-      data: {
-        clerkId: id,
-        email: email_addresses[0].email_address,
-        username,
-        firstName: first_name,
-        lastName: last_name,
-        imageUrl: image_url,
-      },
-    });
+    switch (type) {
+      // =========================
+      // USER CREATED / UPDATED
+      // =========================
+      case "user.created":
+      case "user.updated": {
+        await prisma.user.upsert({
+          where: {
+            clerkId: data.id,
+          },
+          update: {
+            username: data.username,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            imageUrl: data.image_url,
+            email: data.email_addresses?.[0]?.email_address,
+          },
+          create: {
+            clerkId: data.id,
+            username: data.username,
+            firstName: data.first_name,
+            lastName: data.last_name,
+            imageUrl: data.image_url,
+            email: data.email_addresses?.[0]?.email_address,
+          },
+        });
 
-    console.log("Created user:", user);
+        console.log(`${type}: ${data.username}`);
+        break;
+      }
+
+      // =========================
+      // USER DELETED
+      // =========================
+      case "user.deleted": {
+        if (!data.id) break;
+
+        await prisma.user.delete({
+          where: {
+            clerkId: data.id,
+          },
+        });
+
+        console.log(`Deleted user: ${data.id}`);
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event: ${type}`);
+    }
   } catch (error) {
-    console.error("Prisma Error:", error);
+    console.error("Database Error:", error);
+    return new Response("Database Error", { status: 500 });
   }
-}
 
-  return new Response("Webhook received", {
-    status: 200,
-  });
+  return new Response("Webhook received", { status: 200 });
 }
