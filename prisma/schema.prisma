@@ -1,4 +1,4 @@
- generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -16,19 +16,25 @@ model User {
   email      String   @unique
   imageUrl   String?
   bio        String?
+
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   posts      Post[]
 }
 
 model Post {
-  id        String   @id @default(cuid())
-  content   String
-  imageUrl  String?
+  id         String   @id @default(cuid())
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  caption    String?
+  imageUrl   String?
 
-  userId    String
-  user      User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  userId     String
+  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
