@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   Home,
   User,
-  MessageCircle,
+  Plus,
   Search,
   Flag,
   Settings,
@@ -39,7 +39,7 @@ export default function Navbar() {
       icon: User,
       link: username ? `/profile/${username}` : "/profile",
     },
-    { id: "chat", icon: MessageCircle, link: "/chat" },
+    { id: "add posts", icon: Plus, link: "/createPost" },
     { id: "search", icon: Search, link: "/search" },
     { id: "notifications", icon: Flag, link: "/notifications" },
     { id: "settings", icon: Settings, link: "/settings" },
