@@ -1,9 +1,6 @@
 import PostCard from "@/src/components/homePageComponents/PostCard";
-import Navbar from "@/src/components/Navbar";
 import ProfileHeader from "@/src/components/profilePageComponents/ProfileHeader";
 import { prisma } from "@/src/lib/prisma";
-
-import React from "react";
 
 export default async function Page({
   params,
@@ -11,7 +8,6 @@ export default async function Page({
   params: Promise<{ username: string }>;
 }) {
   const { username } = await params;
-   console.log("Username:", username);
 
   const profileUser = await prisma.user.findUnique({
     where: {
@@ -23,12 +19,22 @@ export default async function Page({
     return <div>User not found</div>;
   }
 
- 
+  const userPosts = await prisma.post.findMany({
+    where: {
+      userId: profileUser.id,
+    },
+    include: {
+      user: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
   return (
     <div>
       <ProfileHeader profileUser={profileUser} />
-      <PostCard variant="profile" />
+      <PostCard posts={userPosts} variant="profile" />
     </div>
   );
 }
