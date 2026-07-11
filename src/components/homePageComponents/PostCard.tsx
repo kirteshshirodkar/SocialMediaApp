@@ -6,7 +6,7 @@ import { useState } from "react";
 import image1 from "../../assets/images/pro2.jpg";
 import image2 from "../../assets/images/pro6.jpg";
 import image3 from "../../assets/images/pro7.jpg";
-
+import Link from "next/link";
 // 🔥 Reusable Feed Component (Home + Profile Grid)
 type PostType = {
   id: string;
@@ -33,8 +33,9 @@ export default function PostCard({
       <div className="w-full max-w-5xl mx-auto px-4 mt-6">
         <div className="grid grid-cols-3 gap-4">
           {posts.map((post) => (
-            <div
+            <Link
               key={post.id}
+              href={`/profile/${post.user.username}/posts/${post.id}`}
               className="relative aspect-square overflow-hidden rounded-xl group cursor-pointer"
             >
               {post.imageUrl && (
@@ -42,14 +43,13 @@ export default function PostCard({
                   src={post.imageUrl}
                   alt="post"
                   fill
-                 sizes="(max-width: 768px) 33vw, 300px"
+                  sizes="(max-width: 768px) 33vw, 300px"
                   className="object-cover group-hover:scale-105 transition duration-300"
                 />
               )}
 
-              {/* Overlay on hover */}
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition" />
-            </div>
+            </Link>
           ))}
         </div>
       </div>
