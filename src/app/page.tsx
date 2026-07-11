@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 import Advertisment from "../components/homePageComponents/Advertisment";
 import PostCard from "../components/homePageComponents/PostCard";
 import Sidebar from "../components/homePageComponents/Sidebar";
@@ -12,6 +13,7 @@ export default async function Home() {
       createdAt: "desc",
     },
   });
+  console.log("Fetching posts...");
   return (
     <div className="flex bg-[#F5F7FB] min-h-screen">
       {/* LEFT SIDEBAR */}
