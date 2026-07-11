@@ -42,6 +42,7 @@ export default function PostCard({
                   src={post.imageUrl}
                   alt="post"
                   fill
+                 sizes="(max-width: 768px) 33vw, 300px"
                   className="object-cover group-hover:scale-105 transition duration-300"
                 />
               )}
@@ -71,6 +72,7 @@ export default function PostCard({
                   <Image
                     src={post.user.imageUrl}
                     alt={post.user.username}
+                    sizes="(max-width: 768px) 100vw, 768px"
                     width={40}
                     height={40}
                     className="rounded-full"
