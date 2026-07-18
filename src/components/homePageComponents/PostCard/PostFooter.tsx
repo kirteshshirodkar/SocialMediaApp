@@ -2,22 +2,25 @@
 
 import { FeedPostProps } from "./types";
 
-export default function PostFooter({ post }: FeedPostProps) {
+type PostFooterProps = FeedPostProps & {
+  onViewComments: () => void;
+};
+
+export default function PostFooter({ post, onViewComments }: PostFooterProps) {
   return (
     <>
-      <p className="font-semibold text-sm mt-3">
-        245 likes
-      </p>
+      <p className="font-semibold text-sm mt-3">245 likes</p>
 
       <div className="mt-2 text-sm">
-        <span className="font-semibold mr-2">
-          {post.user.username}
-        </span>
+        <span className="font-semibold mr-2">{post.user.username}</span>
 
         <span>{post.caption}</span>
       </div>
 
-      <button className="text-gray-500 text-sm mt-2 hover:text-gray-700">
+      <button
+        onClick={onViewComments}
+        className="text-gray-500 text-sm mt-2 hover:text-gray-700"
+      >
         View all 18 comments
       </button>
 
