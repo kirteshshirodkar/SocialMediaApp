@@ -9,3 +9,7 @@ export type PostType = {
     imageUrl: string | null;
   };
 };
+
+export type FeedPostProps = {
+  post: PostType;
+};
