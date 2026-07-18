@@ -13,3 +13,14 @@ export type PostType = {
 export type FeedPostProps = {
   post: PostType;
 };
+
+export type CommentType = {
+  id: string;
+  content: string;
+  createdAt: string;
+
+  user: {
+    username: string;
+    imageUrl: string | null;
+  };
+};

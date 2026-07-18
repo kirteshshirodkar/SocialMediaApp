@@ -3,6 +3,8 @@
 import { X } from "lucide-react";
 
 import { PostType } from "./types";
+import CommentList from "./CommentList";
+import CommentInput from "./CommentInput";
 
 type Props = {
   open: boolean;
@@ -36,7 +38,16 @@ export default function CommentModal({ open, onClose }: Props) {
 
           {/* Right */}
           <div className="flex flex-col h-full">
-            Header Comment List Comment Input
+            {/* Header */}
+            <div className="border-b px-4 py-4 font-semibold text-center">
+              Comments
+            </div>
+
+            {/* Comments */}
+            <CommentList />
+
+            {/* Input */}
+            <CommentInput />
           </div>
         </div>
       </div>
