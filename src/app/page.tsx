@@ -8,7 +8,24 @@ export default async function Home() {
   const posts = await prisma.post.findMany({
     include: {
       user: true,
+
+      comments: {
+        include: {
+          user: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+
+      _count: {
+        select: {
+          comments: true,
+          likes: true,
+        },
+      },
     },
+
     orderBy: {
       createdAt: "desc",
     },

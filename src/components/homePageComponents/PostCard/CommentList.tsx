@@ -1,12 +1,18 @@
 "use client";
 
 import CommentItem from "./CommentItem";
-import { dummyComments } from "./DummyComments";
+import { CommentType } from "./types";
 
-export default function CommentList() {
+type Props = {
+  comments: CommentType[];
+};
+
+export default function CommentList({
+  comments,
+}: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
-      {dummyComments.map((comment) => (
+      {comments.map((comment) => (
         <CommentItem
           key={comment.id}
           comment={comment}

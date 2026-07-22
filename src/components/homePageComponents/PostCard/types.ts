@@ -8,6 +8,13 @@ export type PostType = {
     username: string;
     imageUrl: string | null;
   };
+
+  comments: CommentType[];
+
+  _count: {
+    comments: number;
+    likes: number;
+  };
 };
 
 export type FeedPostProps = {
@@ -17,10 +24,13 @@ export type FeedPostProps = {
 export type CommentType = {
   id: string;
   content: string;
-  createdAt: string;
+  createdAt: Date;
 
   user: {
     username: string;
     imageUrl: string | null;
   };
+};
+export type CommentInputProps = {
+  postId: string;
 };

@@ -29,15 +29,19 @@ export default function CommentItem({ comment }: Props) {
       {/* Content */}
       <div className="flex-1">
         <p className="text-sm">
-          <span className="font-semibold mr-2">
-            {comment.user.username}
-          </span>
+          <span className="font-semibold mr-2">{comment.user.username}</span>
 
           {comment.content}
         </p>
 
         <div className="flex gap-4 mt-1 text-xs text-gray-500">
-          <span>{comment.createdAt}</span>
+          <span>
+            {new Intl.DateTimeFormat("en-IN", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+            }).format(new Date(comment.createdAt))}
+          </span>
 
           <button>Reply</button>
         </div>
