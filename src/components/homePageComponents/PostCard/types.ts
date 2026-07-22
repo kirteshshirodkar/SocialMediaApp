@@ -34,3 +34,4 @@ export type CommentType = {
 export type CommentInputProps = {
   postId: string;
 };
+
