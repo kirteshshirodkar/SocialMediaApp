@@ -1,6 +1,6 @@
 import PostCard from "@/src/components/homePageComponents/PostCard";
 import { prisma } from "@/src/lib/prisma";
-
+import { postInclude } from "@/src/lib/postInclude";
 export default async function UserPostsPage({
   params,
 }: {
@@ -17,9 +17,7 @@ export default async function UserPostsPage({
     },
     include: {
       posts: {
-        include: {
-          user: true,
-        },
+        include: postInclude,
         orderBy: {
           createdAt: "desc",
         },

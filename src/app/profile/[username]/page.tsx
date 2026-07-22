@@ -1,7 +1,7 @@
 import PostCard from "@/src/components/homePageComponents/PostCard";
 import ProfileHeader from "@/src/components/profilePageComponents/ProfileHeader";
 import { prisma } from "@/src/lib/prisma";
-
+import { postInclude } from "@/src/lib/postInclude";
 export default async function Page({
   params,
 }: {
@@ -23,9 +23,7 @@ export default async function Page({
     where: {
       userId: profileUser.id,
     },
-    include: {
-      user: true,
-    },
+    include: postInclude,
     orderBy: {
       createdAt: "desc",
     },

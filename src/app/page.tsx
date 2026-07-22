@@ -4,28 +4,10 @@ import PostCard from "../components/homePageComponents/PostCard";
 import Sidebar from "../components/homePageComponents/Sidebar";
 import Stories from "../components/homePageComponents/Stories";
 import { prisma } from "@/src/lib/prisma";
+import { postInclude } from "@/src/lib/postInclude";
 export default async function Home() {
   const posts = await prisma.post.findMany({
-    include: {
-      user: true,
-
-      comments: {
-        include: {
-          user: true,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-      },
-
-      _count: {
-        select: {
-          comments: true,
-          likes: true,
-        },
-      },
-    },
-
+    include: postInclude,
     orderBy: {
       createdAt: "desc",
     },
