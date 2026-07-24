@@ -1,6 +1,8 @@
 import PostCard from "@/src/components/homePageComponents/PostCard";
 import { prisma } from "@/src/lib/prisma";
 import { postInclude } from "@/src/lib/postInclude";
+import { CurrentUserProvider } from "@/src/context/CurrentUserContext";
+import { getCurrentUser } from "@/src/lib/getCurrentUser";
 export default async function UserPostsPage({
   params,
 }: {
@@ -10,6 +12,8 @@ export default async function UserPostsPage({
   }>;
 }) {
   const { username, postId } = await params;
+
+  const currentUser = await getCurrentUser();
 
   const user = await prisma.user.findUnique({
     where: {
@@ -36,7 +40,14 @@ export default async function UserPostsPage({
 
   return (
     <div className="py-8">
-      <PostCard posts={orderedPosts} variant="home" />
+      <CurrentUserProvider
+  currentUserId={currentUser?.id ?? ""}
+>
+  <PostCard
+    posts={orderedPosts}
+    variant="home"
+  />
+</CurrentUserProvider>
     </div>
   );
 }

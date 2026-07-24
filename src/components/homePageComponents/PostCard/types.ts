@@ -1,3 +1,15 @@
+export type CommentType = {
+  id: string;
+  content: string;
+  createdAt: Date;
+
+  user: {
+    id: string;
+    username: string;
+    imageUrl: string | null;
+  };
+};
+
 export type PostType = {
   id: string;
   imageUrl: string | null;
@@ -5,6 +17,7 @@ export type PostType = {
   createdAt: Date;
 
   user: {
+    id: string;
     username: string;
     imageUrl: string | null;
   };
@@ -21,17 +34,6 @@ export type FeedPostProps = {
   post: PostType;
 };
 
-export type CommentType = {
-  id: string;
-  content: string;
-  createdAt: Date;
-
-  user: {
-    username: string;
-    imageUrl: string | null;
-  };
-};
 export type CommentInputProps = {
   postId: string;
 };
-

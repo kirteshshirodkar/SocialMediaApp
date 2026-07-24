@@ -8,15 +8,15 @@ import PostFooter from "./PostFooter";
 import { useState } from "react";
 import CommentModal from "./CommentModal";
 
-export default function FeedPost({ post }: FeedPostProps) {
+export default function FeedPost({ post, }: FeedPostProps) {
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
   const [commentsOpen, setCommentsOpen] = useState(false);
   return (
     <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
-      <PostHeader post={post} />
+      <PostHeader  post={post} />
 
-      <PostImage post={post} />
+      <PostImage  post={post} />
 
       <div className="px-4 py-3">
         <PostActions
@@ -27,11 +27,12 @@ export default function FeedPost({ post }: FeedPostProps) {
           onComment={() => setCommentsOpen(true)}
         />
 
-        <PostFooter post={post} onViewComments={() => setCommentsOpen(true)} />
+        <PostFooter post={post}  onViewComments={() => setCommentsOpen(true)} />
         <CommentModal
           open={commentsOpen}
           onClose={() => setCommentsOpen(false)}
           post={post}
+      
         />
       </div>
     </div>

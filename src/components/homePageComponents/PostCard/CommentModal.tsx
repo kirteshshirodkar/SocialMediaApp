@@ -12,7 +12,7 @@ type Props = {
   post: PostType;
 };
 
-export default function CommentModal({ open, onClose ,post}: Props) {
+export default function CommentModal({ open, onClose, post }: Props) {
   if (!open) return null;
 
   return (
@@ -44,7 +44,7 @@ export default function CommentModal({ open, onClose ,post}: Props) {
             </div>
 
             {/* Comments */}
-           <CommentList comments={post.comments} />
+            <CommentList comments={post.comments} postOwnerId={post.user.id} />
 
             {/* Input */}
             <CommentInput postId={post.id} />

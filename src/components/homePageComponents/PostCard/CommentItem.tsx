@@ -1,14 +1,25 @@
 "use client";
-
+import { useCurrentUser } from "@/src/context/CurrentUserContext";
 import Image from "next/image";
 import { Heart } from "lucide-react";
 import { CommentType } from "./types";
+import CommentMenu from "./CommentMenu";
 
 type Props = {
   comment: CommentType;
+  postOwnerId: string;
 };
 
-export default function CommentItem({ comment }: Props) {
+export default function CommentItem({
+  comment,
+  postOwnerId,
+}: Props) {
+  const { currentUserId } = useCurrentUser();
+
+  const canDelete =
+    comment.user.id === currentUserId ||
+    postOwnerId === currentUserId;
+
   return (
     <div className="flex gap-3 px-4 py-3">
       {/* Avatar */}
@@ -48,12 +59,11 @@ export default function CommentItem({ comment }: Props) {
       </div>
 
       {/* Like */}
-      <button className="self-start">
-        <Heart
-          size={14}
-          className="text-gray-400 hover:text-red-500 transition"
-        />
-      </button>
+      <div className="self-start">
+        {canDelete && (
+          <CommentMenu onDelete={() => console.log("Delete:", comment.id)} />
+        )}
+      </div>
     </div>
   );
 }

@@ -5,6 +5,8 @@ import Sidebar from "../components/homePageComponents/Sidebar";
 import Stories from "../components/homePageComponents/Stories";
 import { prisma } from "@/src/lib/prisma";
 import { postInclude } from "@/src/lib/postInclude";
+import { getCurrentUser } from "@/src/lib/getCurrentUser";
+import { CurrentUserProvider } from "@/src/context/CurrentUserContext";
 export default async function Home() {
   const posts = await prisma.post.findMany({
     include: postInclude,
@@ -12,6 +14,7 @@ export default async function Home() {
       createdAt: "desc",
     },
   });
+  const currentUser = await getCurrentUser();
   console.log("Fetching posts...");
   return (
     <div className="flex bg-[#F5F7FB] min-h-screen">
@@ -30,7 +33,9 @@ export default async function Home() {
         <div className="flex justify-center mt-6 px-4">
           <div className="w-full max-w-2xl space-y-6">
             <Stories />
-            <PostCard posts={posts} variant="home" />
+            <CurrentUserProvider currentUserId={currentUser?.id ?? ""}>
+              <PostCard posts={posts} variant="home" />
+            </CurrentUserProvider>
           </div>
         </div>
       </div>

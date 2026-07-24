@@ -5,10 +5,12 @@ import { CommentType } from "./types";
 
 type Props = {
   comments: CommentType[];
+  postOwnerId: string;
 };
 
 export default function CommentList({
   comments,
+  postOwnerId,
 }: Props) {
   return (
     <div className="flex-1 overflow-y-auto">
@@ -16,6 +18,7 @@ export default function CommentList({
         <CommentItem
           key={comment.id}
           comment={comment}
+          postOwnerId={postOwnerId}
         />
       ))}
     </div>
