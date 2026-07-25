@@ -4,21 +4,39 @@ import Image from "next/image";
 import { Heart } from "lucide-react";
 import { CommentType } from "./types";
 import CommentMenu from "./CommentMenu";
+import { useRouter } from "next/navigation";
 
 type Props = {
   comment: CommentType;
   postOwnerId: string;
 };
 
-export default function CommentItem({
-  comment,
-  postOwnerId,
-}: Props) {
+export default function CommentItem({ comment, postOwnerId }: Props) {
   const { currentUserId } = useCurrentUser();
+  const router = useRouter();
+  const handleDelete = async () => {
+  try {
+    console.log(comment.id);
+    const res = await fetch(`/api/comments/${comment.id}`, {
+      method: "DELETE",
+    });
 
+    const data = await res.json();
+
+    console.log("Status:", res.status);
+    console.log("Response:", data);
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to delete comment");
+    }
+
+    router.refresh();
+  } catch (error) {
+    console.error(error);
+  }
+};
   const canDelete =
-    comment.user.id === currentUserId ||
-    postOwnerId === currentUserId;
+    comment.user.id === currentUserId || postOwnerId === currentUserId;
 
   return (
     <div className="flex gap-3 px-4 py-3">
@@ -60,9 +78,7 @@ export default function CommentItem({
 
       {/* Like */}
       <div className="self-start">
-        {canDelete && (
-          <CommentMenu onDelete={() => console.log("Delete:", comment.id)} />
-        )}
+        {canDelete && <CommentMenu onDelete={handleDelete} />}
       </div>
     </div>
   );
