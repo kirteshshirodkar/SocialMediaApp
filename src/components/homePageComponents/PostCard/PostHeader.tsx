@@ -2,10 +2,40 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MoreHorizontal } from "lucide-react";
 import { FeedPostProps } from "./types";
-
+import { useCurrentUser } from "@/src/context/CurrentUserContext";
+import { useRouter, usePathname } from "next/navigation";
+import PostMenu from "./PostMenu";
 export default function PostHeader({ post }: FeedPostProps) {
+  const { currentUserId } = useCurrentUser();
+  const isOwner = currentUserId === post.user.id;
+  const router = useRouter();
+  const pathname = usePathname();
+  const handleDelete = async () => {
+    try {
+      const res = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error);
+      }
+
+      // If we're on the dedicated post page,
+      // go back to the user's profile.
+      if (pathname.includes("/posts/")) {
+        router.push(`/profile/${post.user.username}`);
+        return;
+      }
+
+      // Otherwise just refresh the feed.
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+    }
+  };
   return (
     <div className="flex items-center justify-between px-4 py-3">
       <Link
@@ -27,19 +57,13 @@ export default function PostHeader({ post }: FeedPostProps) {
         )}
 
         <div>
-          <p className="font-semibold text-sm">
-            {post.user.username}
-          </p>
+          <p className="font-semibold text-sm">{post.user.username}</p>
 
-          <p className="text-xs text-gray-500">
-            Suggested for you
-          </p>
+          <p className="text-xs text-gray-500">Suggested for you</p>
         </div>
       </Link>
 
-      <button className="text-gray-500 hover:text-black">
-        <MoreHorizontal size={20} />
-      </button>
+      {isOwner && <PostMenu onDelete={handleDelete} />}
     </div>
   );
 }
