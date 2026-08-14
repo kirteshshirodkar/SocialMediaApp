@@ -1,7 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { Heart, MessageCircle, Share2 } from "lucide-react";
+import {
+  Heart,
+  MessageCircle,
+  Share2,
+  User,
+} from "lucide-react";
 import { UserButton, useUser } from "@clerk/nextjs";
 import EditProfile from "./EditProfile";
 
@@ -35,7 +40,8 @@ export default function ProfileHeader({
 
   return (
     <div className="w-full max-w-5xl mx-auto p-4">
-      {/* Banner */}
+
+      {/* ================= BANNER ================= */}
       <div className="relative w-full h-40 md:h-56 rounded-3xl overflow-hidden shadow-xl">
         <Image
           src="https://images.unsplash.com/photo-1503264116251-35a269479413"
@@ -49,59 +55,117 @@ export default function ProfileHeader({
         <div className="absolute inset-0 bg-gradient-to-r from-purple-500/30 via-blue-500/20 to-transparent" />
       </div>
 
-      {/* Avatar */}
+
+      {/* ================= AVATAR ================= */}
       <div className="flex justify-center md:justify-start">
         <div className="-mt-16 md:-mt-20 relative z-10">
-          <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
-            <UserButton />
+
+          <div className="w-28 h-28 md:w-32 md:h-32 rounded-full border-4 border-white shadow-xl overflow-hidden bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center">
+
+            {/* CURRENT USER */}
+            {isOwnProfile ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <UserButton
+                  appearance={{
+                    elements: {
+                      avatarBox:
+                        "w-24 h-24 md:w-28 md:h-28",
+                    },
+                  }}
+                />
+              </div>
+            ) : profileUser.imageUrl ? (
+
+              /* OTHER USER WITH PROFILE IMAGE */
+              <Image
+                src={profileUser.imageUrl}
+                alt={`${profileUser.username || "User"} profile picture`}
+                width={128}
+                height={128}
+                className="w-full h-full object-cover"
+              />
+
+            ) : (
+
+              /* OTHER USER WITHOUT PROFILE IMAGE */
+              <User
+                size={52}
+                className="text-white"
+              />
+
+            )}
+
           </div>
         </div>
       </div>
 
+
+      {/* ================= PROFILE CONTENT ================= */}
       <div className="mt-4 flex flex-col md:flex-row md:justify-between gap-6">
+
+        {/* LEFT SECTION */}
         <div className="flex flex-col items-center md:items-start">
 
+          {/* Username */}
           <h1 className="text-3xl font-semibold">
             {profileUser.username}
           </h1>
 
+          {/* Bio */}
           <p className="text-gray-500 mt-1">
             {profileUser.bio || "No bio added yet"}
           </p>
 
+          {/* Stats */}
           <div className="flex gap-6 mt-5">
             {stats.map((stat) => (
-              <div key={stat.label}>
-                <h2 className="font-bold">{stat.value}</h2>
+              <div
+                key={stat.label}
+                className="text-center md:text-left"
+              >
+                <h2 className="font-bold">
+                  {stat.value}
+                </h2>
+
                 <p className="text-sm text-gray-500">
                   {stat.label}
                 </p>
               </div>
             ))}
           </div>
+
         </div>
 
+
+        {/* RIGHT SECTION */}
         <div className="flex flex-col items-center md:items-end gap-4">
 
+          {/* Social Icons */}
           <div className="flex gap-3">
             {socials.map((social, index) => (
               <div
                 key={index}
-                className="w-10 h-10 rounded-full bg-white shadow-md flex justify-center items-center hover:scale-110 transition-all"
+                className="w-10 h-10 rounded-full bg-white shadow-md flex justify-center items-center hover:scale-110 hover:shadow-lg transition-all duration-300 cursor-pointer"
               >
                 {social.icon}
               </div>
             ))}
           </div>
 
+
+          {/* ACTION BUTTON */}
           {isOwnProfile ? (
-            <EditProfile bio={profileUser.bio} />
+            <EditProfile
+              bio={profileUser.bio}
+            />
           ) : (
-            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white">
+            <button className="px-6 py-2 rounded-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium shadow-lg hover:scale-105 transition-all duration-300">
               Follow
             </button>
           )}
+
         </div>
+
       </div>
     </div>
   );
