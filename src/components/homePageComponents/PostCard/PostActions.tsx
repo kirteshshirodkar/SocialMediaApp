@@ -10,6 +10,7 @@ import {
 type PostActionsProps = {
   liked: boolean;
   saved: boolean;
+  likeLoading: boolean;
 
   onLike: () => void;
   onSave: () => void;
@@ -19,6 +20,7 @@ type PostActionsProps = {
 export default function PostActions({
   liked,
   saved,
+  likeLoading,
   onLike,
   onSave,
   onComment,
@@ -26,10 +28,13 @@ export default function PostActions({
   return (
     <div className="flex items-center justify-between">
       <div className="flex items-center gap-5">
+
         {/* Like */}
         <button
           onClick={onLike}
-          className="hover:scale-110 transition"
+          disabled={likeLoading}
+          className="hover:scale-110 transition disabled:opacity-60"
+          aria-label={liked ? "Unlike post" : "Like post"}
         >
           <Heart
             size={26}

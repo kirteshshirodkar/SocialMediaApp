@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+
 import Advertisment from "../components/homePageComponents/Advertisment";
 import PostCard from "../components/homePageComponents/PostCard";
 import Sidebar from "../components/homePageComponents/Sidebar";
@@ -7,17 +8,44 @@ import { prisma } from "@/src/lib/prisma";
 import { postInclude } from "@/src/lib/postInclude";
 import { getCurrentUser } from "@/src/lib/getCurrentUser";
 import { CurrentUserProvider } from "@/src/context/CurrentUserContext";
+
 export default async function Home() {
+  // Get the currently logged-in Prisma user first
+  const currentUser = await getCurrentUser();
+
   const posts = await prisma.post.findMany({
-    include: postInclude,
+    include: {
+      ...postInclude,
+
+      // Only fetch the current user's likes
+      likes: currentUser?.id
+        ? {
+            where: {
+              userId: currentUser.id,
+            },
+            select: {
+              id: true,
+            },
+          }
+        : false,
+    },
+
     orderBy: {
       createdAt: "desc",
     },
   });
-  const currentUser = await getCurrentUser();
+
+  // Convert the user's like record into a simple boolean
+  const postsWithLikeStatus = posts.map((post) => ({
+    ...post,
+    isLiked: post.likes.length > 0,
+  }));
+
   console.log("Fetching posts...");
+
   return (
     <div className="flex bg-[#F5F7FB] min-h-screen">
+
       {/* LEFT SIDEBAR */}
       <div className="hidden md:block fixed top-28 left-6">
         <Sidebar />
@@ -32,10 +60,18 @@ export default async function Home() {
       <div className="flex-1 md:ml-[300px] lg:mr-[340px]">
         <div className="flex justify-center mt-6 px-4">
           <div className="w-full max-w-2xl space-y-6">
+
             <Stories />
-            <CurrentUserProvider currentUserId={currentUser?.id ?? ""}>
-              <PostCard posts={posts} variant="home" />
+
+            <CurrentUserProvider
+              currentUserId={currentUser?.id ?? ""}
+            >
+              <PostCard
+                posts={postsWithLikeStatus}
+                variant="home"
+              />
             </CurrentUserProvider>
+
           </div>
         </div>
       </div>
