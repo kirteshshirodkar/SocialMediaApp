@@ -8,70 +8,108 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  clerkId    String   @unique
-  username   String   @unique
-  firstName  String?
-  lastName   String?
-  email      String   @unique
-  imageUrl   String?
-  bio        String?
+  id        String  @id @default(cuid())
+  clerkId   String  @unique
+  username  String  @unique
+  firstName String?
+  lastName  String?
+  email     String  @unique
+  imageUrl  String?
+  bio       String?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  posts      Post[]
-  comments   Comment[]
-  likes      Like[]
+  posts    Post[]
+  comments Comment[]
+  likes    Like[]
+
+  stories    Story[]
+  storyViews StoryView[]
 }
 
 model Post {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  caption    String?
-  imageUrl   String?
+  caption  String?
+  imageUrl String?
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId     String
-  user       User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  comments   Comment[]
-  likes      Like[]
+  comments Comment[]
+  likes    Like[]
 
   @@index([userId])
   @@index([createdAt])
 }
 
 model Comment {
-  id         String   @id @default(cuid())
+  id String @id @default(cuid())
 
-  content    String
+  content String
 
-  createdAt  DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  userId      String
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  postId      String
-  post        Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@index([postId])
   @@index([userId])
 }
 
 model Like {
-  id          String @id @default(cuid())
+  id String @id @default(cuid())
 
-  userId      String
-  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  postId      String
-  post        Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userId, postId])
   @@index([postId])
+}
+
+model Story {
+  id String @id @default(cuid())
+
+  mediaUrl String
+  caption  String?
+
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  views StoryView[]
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([createdAt])
+}
+
+model StoryView {
+  id String @id @default(cuid())
+
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  viewedAt DateTime @default(now())
+
+  @@unique([storyId, userId])
+  @@index([storyId])
+  @@index([userId])
 }
