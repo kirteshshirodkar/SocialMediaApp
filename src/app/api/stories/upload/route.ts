@@ -7,10 +7,7 @@ export async function POST(req: Request) {
     const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -20,10 +17,7 @@ export async function POST(req: Request) {
     });
 
     if (!user) {
-      return Response.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return Response.json({ error: "User not found" }, { status: 404 });
     }
 
     const formData = await req.formData();
@@ -31,10 +25,7 @@ export async function POST(req: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return Response.json(
-        { error: "No file provided" },
-        { status: 400 }
-      );
+      return Response.json({ error: "No file provided" }, { status: 400 });
     }
 
     /*
@@ -60,7 +51,7 @@ export async function POST(req: Request) {
           } else {
             resolve(result);
           }
-        }
+        },
       );
 
       uploadStream.end(buffer);
@@ -69,13 +60,11 @@ export async function POST(req: Request) {
     return Response.json({
       message: "Story uploaded successfully",
       mediaUrl: result.secure_url,
+      resourceType: result.resource_type,
     });
   } catch (error) {
     console.error("Story upload error:", error);
 
-    return Response.json(
-      { error: "Failed to upload story" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to upload story" }, { status: 500 });
   }
 }

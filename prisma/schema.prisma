@@ -82,8 +82,9 @@ model Like {
 model Story {
   id String @id @default(cuid())
 
-  mediaUrl String
-  caption  String?
+  mediaUrl     String
+  resourceType String  @default("image")
+  caption      String?
 
   createdAt DateTime @default(now())
   expiresAt DateTime
