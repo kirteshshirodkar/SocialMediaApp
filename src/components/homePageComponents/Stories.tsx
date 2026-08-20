@@ -333,7 +333,7 @@ function StoryItem({
           USERNAME
           ===================================================== */}
 
-      <p className="mt-2 max-w-[70px] truncate text-center text-xs text-white/80">
+      <p className="mt-2 max-w-[70px] truncate text-center text-xs text-black/80">
         {isOwnStory
           ? "Your Story"
           : story.user.username}
@@ -515,7 +515,7 @@ function StoryModal({
 
             </div>
 
-            <span className="text-sm font-medium text-black">
+            <span className="text-sm font-medium text-white">
               {story.isOwnStory
                 ? "Your Story"
                 : story.user.username}
