@@ -1,7 +1,7 @@
 "use client";
 
 import CommentItem from "./CommentItem";
-import { CommentType } from "./types";
+import { CommentType } from "../types";
 
 type Props = {
   comments: CommentType[];

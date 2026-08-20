@@ -2,7 +2,7 @@
 import { useCurrentUser } from "@/src/context/CurrentUserContext";
 import Image from "next/image";
 import { Heart } from "lucide-react";
-import { CommentType } from "./types";
+import { CommentType } from "../types";
 import CommentMenu from "./CommentMenu";
 import { useRouter } from "next/navigation";
 

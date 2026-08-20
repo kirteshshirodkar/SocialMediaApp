@@ -1,6 +1,6 @@
 "use client";
 
-import { FeedPostProps } from "./types";
+import { FeedPostProps } from "../types";
 import PostHeader from "./PostHeader";
 import PostImage from "./PostImage";
 import PostActions from "./PostActions";

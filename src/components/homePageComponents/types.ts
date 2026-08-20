@@ -37,3 +37,35 @@ export type FeedPostProps = {
 export type CommentInputProps = {
   postId: string;
 };
+
+/* =========================================================
+   STORY TYPES
+   ========================================================= */
+
+export type StoryMedia = {
+  id: string;
+  mediaUrl: string;
+  caption: string | null;
+
+  createdAt: string;
+  expiresAt: string;
+
+  resourceType: "image" | "video";
+
+  isViewed: boolean;
+};
+
+export type StoryUser = {
+  id: string;
+  username: string;
+  imageUrl: string | null;
+};
+
+export type Story = {
+  user: StoryUser;
+
+  stories: StoryMedia[];
+
+  isSeen: boolean;
+  isOwnStory: boolean;
+};

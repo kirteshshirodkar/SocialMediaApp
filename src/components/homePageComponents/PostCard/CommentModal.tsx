@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import Image from "next/image";
 
-import { PostType } from "./types";
+import { PostType } from "../types";
 import CommentList from "./CommentList";
 import CommentInput from "./CommentInput";
 

@@ -2,31 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { X, User, Plus, Loader2 } from "lucide-react";
+
 import CreateStoryModal from "./CreateStoryModal";
-
-/* =========================================================
-   TYPES
-   ========================================================= */
-
-export type StoryItem = {
-  id: string;
-  mediaUrl: string;
-  caption: string | null;
-  createdAt: string;
-  expiresAt: string;
-};
-
-export type Story = {
-  user: {
-    id: string;
-    username: string;
-    imageUrl: string | null;
-  };
-
-  stories: StoryItem[];
-
-  isSeen: boolean;
-};
+import type { Story } from "./types";
 
 /* =========================================================
    MAIN COMPONENT
@@ -34,6 +12,7 @@ export type Story = {
 
 export default function Stories() {
   const [stories, setStories] = useState<Story[]>([]);
+
   const [currentUserId, setCurrentUserId] = useState<string | null>(
     null
   );
@@ -51,8 +30,6 @@ export default function Stories() {
 
   const fetchStories = useCallback(async () => {
     try {
-      setLoading(true);
-
       const response = await fetch("/api/stories", {
         method: "GET",
         cache: "no-store",
@@ -69,14 +46,14 @@ export default function Stories() {
       setCurrentUserId(data.currentUserId);
 
       /*
-       * Make sure current user's story is always first.
+       * The API already puts the current user first.
+       * We sort again here as a safety measure.
        */
 
       const sortedStories = [...(data.stories || [])].sort(
         (a: Story, b: Story) => {
-          if (a.user.id === data.currentUserId) return -1;
-
-          if (b.user.id === data.currentUserId) return 1;
+          if (a.isOwnStory) return -1;
+          if (b.isOwnStory) return 1;
 
           return 0;
         }
@@ -84,7 +61,10 @@ export default function Stories() {
 
       setStories(sortedStories);
     } catch (error) {
-      console.error("Failed to fetch stories:", error);
+      console.error(
+        "Failed to fetch stories:",
+        error
+      );
     } finally {
       setLoading(false);
     }
@@ -103,22 +83,53 @@ export default function Stories() {
      ========================================================= */
 
   const handleStoryClick = (story: Story) => {
+    const isOwnStory =
+      story.user.id === currentUserId;
+
+    const hasStories =
+      story.stories.length > 0;
+
     /*
-     * Current user's story:
-     * Open Create Story modal.
+     * Current user has no story.
+     *
+     * Clicking "Your Story" opens Create Story.
      */
 
-    if (story.user.id === currentUserId) {
+    if (isOwnStory && !hasStories) {
       setCreateStoryOpen(true);
       return;
     }
 
     /*
-     * Other user's story:
-     * Open story viewer.
+     * User has at least one story.
+     *
+     * This works for both:
+     *
+     * - Current user's story
+     * - Other users' stories
      */
 
     setActiveUserStories(story);
+  };
+
+  /* =========================================================
+     CREATE STORY
+     * ========================================================= */
+
+  const handleCreateStory = () => {
+    setCreateStoryOpen(true);
+  };
+
+  /* =========================================================
+     STORY CREATED
+     * ========================================================= */
+
+  const handleStoryCreated = async () => {
+    /*
+     * Reload stories from database.
+     */
+
+    await fetchStories();
   };
 
   /* =========================================================
@@ -127,7 +138,7 @@ export default function Stories() {
 
   if (loading) {
     return (
-      <div className="w-full rounded-2xl bg-white/10 px-3 py-4 backdrop-blur-md shadow-lg">
+      <div className="w-full rounded-2xl bg-white/10 px-3 py-4 shadow-lg backdrop-blur-md">
         <div className="flex gap-6 overflow-x-auto px-1 scrollbar-hide">
           {[1, 2, 3, 4].map((item) => (
             <div
@@ -150,33 +161,24 @@ export default function Stories() {
 
   return (
     <>
-      <div className="w-full rounded-2xl bg-white/10 px-3 py-4 backdrop-blur-md shadow-lg">
-        <div className="flex gap-6 overflow-x-auto px-1 snap-x snap-mandatory scrollbar-hide">
+      <div className="w-full rounded-2xl bg-white/10 px-3 py-4 shadow-lg backdrop-blur-md">
+        <div className="flex snap-x snap-mandatory gap-6 overflow-x-auto px-1 scrollbar-hide">
 
           {stories.map((story) => (
             <StoryItem
               key={story.user.id}
               story={story}
-              isOwnStory={story.user.id === currentUserId}
-              onClick={() => handleStoryClick(story)}
+              isOwnStory={
+                story.user.id === currentUserId
+              }
+              onClick={() =>
+                handleStoryClick(story)
+              }
+              onCreateStory={
+                handleCreateStory
+              }
             />
           ))}
-
-          {/* Empty state */}
-          {stories.length === 0 && (
-            <button
-              onClick={() => setCreateStoryOpen(true)}
-              className="flex min-w-[80px] flex-col items-center"
-            >
-              <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-2 border-dashed border-gray-300 bg-white">
-                <Plus className="h-7 w-7 text-gray-500" />
-              </div>
-
-              <p className="mt-2 max-w-[70px] truncate text-center text-xs text-white/80">
-                Your Story
-              </p>
-            </button>
-          )}
         </div>
       </div>
 
@@ -186,15 +188,10 @@ export default function Stories() {
 
       <CreateStoryModal
         open={createStoryOpen}
-        onClose={() => setCreateStoryOpen(false)}
-        onCreated={() => {
-          /*
-           * Immediately reload stories after
-           * creating a new story.
-           */
-
-          fetchStories();
-        }}
+        onClose={() =>
+          setCreateStoryOpen(false)
+        }
+        onCreated={handleStoryCreated}
       />
 
       {/* =====================================================
@@ -204,7 +201,9 @@ export default function Stories() {
       {activeUserStories && (
         <StoryModal
           story={activeUserStories}
-          onClose={() => setActiveUserStories(null)}
+          onClose={() =>
+            setActiveUserStories(null)
+          }
           onViewed={fetchStories}
         />
       )}
@@ -235,60 +234,99 @@ type StoryItemProps = {
   story: Story;
   isOwnStory: boolean;
   onClick: () => void;
+  onCreateStory: () => void;
 };
 
 function StoryItem({
   story,
   isOwnStory,
   onClick,
+  onCreateStory,
 }: StoryItemProps) {
+  const hasStories =
+    story.stories.length > 0;
+
   return (
-    <div
-      onClick={onClick}
-      className="group flex min-w-[64px] cursor-pointer snap-start flex-col items-center transition-all duration-300"
-    >
+    <div className="group flex min-w-[64px] snap-start flex-col items-center">
+
       {/* =====================================================
-          AVATAR + RING
+          AVATAR
           ===================================================== */}
 
       <div
-        className={`
-          relative h-16 w-16 rounded-full p-[2px]
-          transition-all duration-300
-          group-hover:scale-105
-          ${
-            isOwnStory
-              ? "bg-gray-300"
-              : story.isSeen
-                ? "bg-gray-400"
-                : "bg-gradient-to-tr from-pink-500 via-orange-400 to-yellow-400"
+        onClick={onClick}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (
+            event.key === "Enter" ||
+            event.key === " "
+          ) {
+            onClick();
           }
-        `}
+        }}
+        className="cursor-pointer transition-all duration-300 group-hover:scale-105"
       >
-        {/* White border around profile image */}
-        <div className="h-full w-full rounded-full bg-white p-[2px]">
-          {story.user.imageUrl ? (
-            <img
-              src={story.user.imageUrl}
-              alt={story.user.username}
-              className="h-full w-full rounded-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-100">
-              <User className="h-7 w-7 text-gray-400" />
-            </div>
+        <div
+          className={`
+            relative h-16 w-16 rounded-full p-[2px]
+            ${
+              isOwnStory
+                ? hasStories
+                  ? "bg-gradient-to-tr from-pink-500 via-orange-400 to-yellow-400"
+                  : "bg-gray-300"
+                : story.isSeen
+                  ? "bg-gray-400"
+                  : "bg-gradient-to-tr from-pink-500 via-orange-400 to-yellow-400"
+            }
+          `}
+        >
+          {/* =================================================
+              WHITE INNER RING
+              ================================================= */}
+
+          <div className="h-full w-full rounded-full bg-white p-[2px]">
+
+            {story.user.imageUrl ? (
+              <img
+                src={story.user.imageUrl}
+                alt={story.user.username}
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center rounded-full bg-gray-100">
+                <User className="h-7 w-7 text-gray-400" />
+              </div>
+            )}
+
+          </div>
+
+          {/* =================================================
+              CREATE STORY BUTTON
+              ================================================= */}
+
+          {isOwnStory && (
+            <button
+              type="button"
+              onClick={(event) => {
+                /*
+                 * Prevent avatar click.
+                 */
+
+                event.stopPropagation();
+
+                onCreateStory();
+              }}
+              className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-500 text-white shadow-md transition hover:scale-110 hover:bg-blue-600"
+              aria-label="Create story"
+            >
+              <Plus
+                size={12}
+                strokeWidth={3}
+              />
+            </button>
           )}
         </div>
-
-        {/* =================================================
-            PLUS BUTTON FOR CURRENT USER
-            ================================================= */}
-
-        {isOwnStory && (
-          <div className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full border-2 border-white bg-blue-500 text-white shadow-md">
-            <Plus size={12} strokeWidth={3} />
-          </div>
-        )}
       </div>
 
       {/* =====================================================
@@ -296,7 +334,9 @@ function StoryItem({
           ===================================================== */}
 
       <p className="mt-2 max-w-[70px] truncate text-center text-xs text-white/80">
-        {isOwnStory ? "Your Story" : story.user.username}
+        {isOwnStory
+          ? "Your Story"
+          : story.user.username}
       </p>
     </div>
   );
@@ -317,29 +357,54 @@ function StoryModal({
   onClose,
   onViewed,
 }: StoryModalProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] =
+    useState(0);
 
-  const [viewing, setViewing] = useState(false);
+  const [viewing, setViewing] =
+    useState(false);
 
-  const currentStory = story.stories[currentIndex];
+  const currentStory =
+    story.stories[currentIndex];
 
   /* =======================================================
-     MARK STORY AS SEEN
+     MARK STORY AS VIEWED
      ======================================================= */
 
   useEffect(() => {
     if (!currentStory) return;
 
+    /*
+     * Don't create a view record for
+     * the current user's own story.
+     */
+
+    if (story.isOwnStory) {
+      return;
+    }
+
     const markAsViewed = async () => {
       try {
         setViewing(true);
 
-        await fetch(
+        const response = await fetch(
           `/api/stories/${currentStory.id}/view`,
           {
             method: "POST",
           }
         );
+
+        if (!response.ok) {
+          console.error(
+            "Failed to mark story as viewed"
+          );
+
+          return;
+        }
+
+        /*
+         * Refresh story bubbles so the
+         * seen/unseen ring updates.
+         */
 
         onViewed();
       } catch (error) {
@@ -353,15 +418,24 @@ function StoryModal({
     };
 
     markAsViewed();
-  }, [currentStory, onViewed]);
+  }, [
+    currentStory,
+    story.isOwnStory,
+    onViewed,
+  ]);
 
   /* =======================================================
      NEXT STORY
      ======================================================= */
 
   const handleNext = () => {
-    if (currentIndex < story.stories.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
+    if (
+      currentIndex <
+      story.stories.length - 1
+    ) {
+      setCurrentIndex(
+        (previous) => previous + 1
+      );
     } else {
       onClose();
     }
@@ -373,7 +447,9 @@ function StoryModal({
 
   const handlePrevious = () => {
     if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
+      setCurrentIndex(
+        (previous) => previous - 1
+      );
     }
   };
 
@@ -395,20 +471,22 @@ function StoryModal({
             ================================================= */}
 
         <div className="absolute left-3 right-3 top-3 z-20 flex gap-1">
-          {story.stories.map((item, index) => (
-            <div
-              key={item.id}
-              className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
-            >
+          {story.stories.map(
+            (item, index) => (
               <div
-                className={`h-full rounded-full transition-all ${
-                  index <= currentIndex
-                    ? "w-full bg-white"
-                    : "w-0"
-                }`}
-              />
-            </div>
-          ))}
+                key={item.id}
+                className="h-1 flex-1 overflow-hidden rounded-full bg-white/30"
+              >
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    index <= currentIndex
+                      ? "w-full bg-white"
+                      : "w-0"
+                  }`}
+                />
+              </div>
+            )
+          )}
         </div>
 
         {/* =================================================
@@ -419,7 +497,10 @@ function StoryModal({
 
           <div className="flex items-center gap-3">
 
+            {/* Profile image */}
+
             <div className="h-9 w-9 overflow-hidden rounded-full border border-white/30">
+
               {story.user.imageUrl ? (
                 <img
                   src={story.user.imageUrl}
@@ -431,16 +512,23 @@ function StoryModal({
                   <User className="h-5 w-5 text-gray-500" />
                 </div>
               )}
+
             </div>
 
             <span className="text-sm font-medium text-white">
-              {story.user.username}
+              {story.isOwnStory
+                ? "Your Story"
+                : story.user.username}
             </span>
           </div>
 
+          {/* Close */}
+
           <button
+            type="button"
             onClick={onClose}
             className="rounded-full p-2 text-white transition hover:bg-white/10"
+            aria-label="Close story"
           >
             <X size={22} />
           </button>
@@ -450,10 +538,10 @@ function StoryModal({
             STORY CONTENT
             ================================================= */}
 
-        {currentStory.mediaUrl.match(
-          /\.(mp4|webm|mov|avi|mkv)(\?.*)?$/i
-        ) ? (
+        {currentStory.resourceType ===
+        "video" ? (
           <video
+            key={currentStory.id}
             src={currentStory.mediaUrl}
             autoPlay
             controls
@@ -462,8 +550,13 @@ function StoryModal({
           />
         ) : (
           <img
+            key={currentStory.id}
             src={currentStory.mediaUrl}
-            alt={`${story.user.username}'s story`}
+            alt={
+              story.isOwnStory
+                ? "Your story"
+                : `${story.user.username}'s story`
+            }
             className="h-full w-full object-contain"
           />
         )}
@@ -485,6 +578,7 @@ function StoryModal({
             ================================================= */}
 
         <button
+          type="button"
           onClick={handlePrevious}
           disabled={currentIndex === 0}
           className="absolute left-0 top-1/2 z-10 h-1/2 w-1/3 -translate-y-1/2 cursor-pointer disabled:cursor-default"
@@ -496,12 +590,16 @@ function StoryModal({
             ================================================= */}
 
         <button
+          type="button"
           onClick={handleNext}
           className="absolute right-0 top-1/2 z-10 h-1/2 w-2/3 -translate-y-1/2 cursor-pointer"
           aria-label="Next story"
         />
 
-        {/* Loading indicator */}
+        {/* =================================================
+            VIEW LOADING
+            ================================================= */}
+
         {viewing && (
           <div className="absolute bottom-4 right-4 z-20">
             <Loader2

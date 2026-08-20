@@ -12,10 +12,7 @@ export async function GET(req: Request) {
     const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     /* =======================================================
@@ -32,10 +29,7 @@ export async function GET(req: Request) {
     });
 
     if (!currentUser) {
-      return Response.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return Response.json({ error: "User not found" }, { status: 404 });
     }
 
     const { searchParams } = new URL(req.url);
@@ -88,8 +82,7 @@ export async function GET(req: Request) {
            */
           resourceType: story.resourceType,
 
-          isOwnStory:
-            story.userId === currentUser.id,
+          isOwnStory: story.userId === currentUser.id,
         })),
       });
     }
@@ -134,8 +127,8 @@ export async function GET(req: Request) {
     });
 
     /* =======================================================
-       STORY GROUP TYPE
-       ======================================================= */
+   GROUP STORIES BY USER
+   ======================================================= */
 
     type StoryData = {
       id: string;
@@ -157,10 +150,6 @@ export async function GET(req: Request) {
       stories: StoryData[];
     };
 
-    /* =======================================================
-       GROUP STORIES BY USER
-       ======================================================= */
-
     const groupedStories = new Map<string, StoryGroup>();
 
     for (const story of stories) {
@@ -172,13 +161,7 @@ export async function GET(req: Request) {
         caption: story.caption,
         createdAt: story.createdAt,
         expiresAt: story.expiresAt,
-
-        /*
-         * Cloudinary resource type:
-         * image / video
-         */
         resourceType: story.resourceType,
-
         isViewed: story.views.length > 0,
       };
 
@@ -193,39 +176,55 @@ export async function GET(req: Request) {
     }
 
     /* =======================================================
-       CREATE FINAL RESPONSE
-       ======================================================= */
+   ALWAYS ADD CURRENT USER
+   ======================================================= */
 
-    const result = Array.from(groupedStories.values()).map(
-      (group) => {
-        const isOwnStory =
-          group.user.id === currentUser.id;
+    if (!groupedStories.has(currentUser.id)) {
+      const currentUserData = await prisma.user.findUnique({
+        where: {
+          id: currentUser.id,
+        },
+        select: {
+          id: true,
+          username: true,
+          imageUrl: true,
+        },
+      });
 
-        /*
-         * Current user's stories don't need
-         * seen/unseen status.
-         */
-        const isSeen = isOwnStory
-          ? false
-          : group.stories.every(
-              (story) => story.isViewed
-            );
-
-        return {
-          user: group.user,
-
-          isOwnStory,
-
-          isSeen,
-
-          stories: group.stories,
-        };
+      if (currentUserData) {
+        groupedStories.set(currentUser.id, {
+          user: currentUserData,
+          stories: [],
+        });
       }
-    );
+    }
 
     /* =======================================================
-       CURRENT USER FIRST
-       ======================================================= */
+   CREATE FINAL RESPONSE
+   ======================================================= */
+
+    const result = Array.from(groupedStories.values()).map((group) => {
+      const isOwnStory = group.user.id === currentUser.id;
+
+      const isSeen = isOwnStory
+        ? false
+        : group.stories.length > 0 &&
+          group.stories.every((story) => story.isViewed);
+
+      return {
+        user: group.user,
+
+        stories: group.stories,
+
+        isOwnStory,
+
+        isSeen,
+      };
+    });
+
+    /* =======================================================
+   CURRENT USER ALWAYS FIRST
+   ======================================================= */
 
     result.sort((a, b) => {
       if (a.isOwnStory) return -1;
@@ -234,6 +233,10 @@ export async function GET(req: Request) {
       return 0;
     });
 
+    return Response.json({
+      currentUserId: currentUser.id,
+      stories: result,
+    });
     /* =======================================================
        RESPONSE
        ======================================================= */
@@ -243,10 +246,7 @@ export async function GET(req: Request) {
       stories: result,
     });
   } catch (error) {
-    console.error(
-      "GET /api/stories error:",
-      error
-    );
+    console.error("GET /api/stories error:", error);
 
     return Response.json(
       {
@@ -254,7 +254,7 @@ export async function GET(req: Request) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
@@ -268,10 +268,7 @@ export async function POST(req: Request) {
     const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     /* =======================================================
@@ -288,10 +285,7 @@ export async function POST(req: Request) {
     });
 
     if (!currentUser) {
-      return Response.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return Response.json({ error: "User not found" }, { status: 404 });
     }
 
     /* =======================================================
@@ -300,27 +294,20 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const {
-      mediaUrl,
-      caption,
-      resourceType,
-    } = body;
+    const { mediaUrl, caption, resourceType } = body;
 
     /* =======================================================
        VALIDATE MEDIA
        ======================================================= */
 
-    if (
-      !mediaUrl ||
-      typeof mediaUrl !== "string"
-    ) {
+    if (!mediaUrl || typeof mediaUrl !== "string") {
       return Response.json(
         {
           error: "Story media is required",
         },
         {
           status: 400,
-        }
+        },
       );
     }
 
@@ -328,18 +315,13 @@ export async function POST(req: Request) {
        VALIDATE RESOURCE TYPE
        ======================================================= */
 
-    const validResourceType =
-      resourceType === "video"
-        ? "video"
-        : "image";
+    const validResourceType = resourceType === "video" ? "video" : "image";
 
     /* =======================================================
        STORY EXPIRATION
        ======================================================= */
 
-    const expiresAt = new Date(
-      Date.now() + 24 * 60 * 60 * 1000
-    );
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     /* =======================================================
        CREATE STORY
@@ -350,8 +332,7 @@ export async function POST(req: Request) {
         mediaUrl,
 
         caption:
-          typeof caption === "string" &&
-          caption.trim().length > 0
+          typeof caption === "string" && caption.trim().length > 0
             ? caption.trim()
             : null,
 
@@ -396,13 +377,10 @@ export async function POST(req: Request) {
       },
       {
         status: 201,
-      }
+      },
     );
   } catch (error) {
-    console.error(
-      "POST /api/stories error:",
-      error
-    );
+    console.error("POST /api/stories error:", error);
 
     return Response.json(
       {
@@ -410,7 +388,7 @@ export async function POST(req: Request) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }

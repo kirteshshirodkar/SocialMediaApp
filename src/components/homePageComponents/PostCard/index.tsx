@@ -2,7 +2,7 @@
 
 import FeedPost from "./FeedPost";
 import ProfilePostGrid from "./ProfilePostGrid";
-import { PostType } from "./types";
+import { PostType } from "../types";
 
 export default function PostCard({
   posts,

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { FeedPostProps } from "./types";
+import { FeedPostProps } from "../types";
 
 export default function PostImage({ post }: FeedPostProps) {
   return (

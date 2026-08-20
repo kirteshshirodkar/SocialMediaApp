@@ -3,7 +3,7 @@
 import { Smile } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import EmojiPicker, { EmojiClickData } from "emoji-picker-react";
-import { CommentInputProps } from "./types";
+import { CommentInputProps } from "../types";
 import { useRouter } from "next/navigation";
 
 export default function CommentInput({ postId }: CommentInputProps) {

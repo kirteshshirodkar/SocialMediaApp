@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { PostType } from "./types";
+import { PostType } from "../types";
 
 export default function ProfilePostGrid({
   posts,

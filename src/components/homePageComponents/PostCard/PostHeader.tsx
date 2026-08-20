@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { FeedPostProps } from "./types";
+import { FeedPostProps } from "../types";
 import { useCurrentUser } from "@/src/context/CurrentUserContext";
 import { useRouter, usePathname } from "next/navigation";
 import PostMenu from "./PostMenu";

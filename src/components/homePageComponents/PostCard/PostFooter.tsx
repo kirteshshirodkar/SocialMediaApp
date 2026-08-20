@@ -1,6 +1,6 @@
 "use client";
 
-import { FeedPostProps } from "./types";
+import { FeedPostProps } from "../types";
 
 type PostFooterProps = FeedPostProps & {
   onViewComments: () => void;
