@@ -25,6 +25,8 @@ export async function GET(req: Request) {
       },
       select: {
         id: true,
+        username: true,
+        imageUrl: true,
       },
     });
 
@@ -32,7 +34,15 @@ export async function GET(req: Request) {
       return Response.json({ error: "User not found" }, { status: 404 });
     }
 
+    /*
+     * Store the ID separately.
+     *
+     * This also prevents TypeScript nullable issues later.
+     */
+    const currentUserId = currentUser.id;
+
     const { searchParams } = new URL(req.url);
+
     const userId = searchParams.get("userId");
 
     const now = new Date();
@@ -40,7 +50,6 @@ export async function GET(req: Request) {
     /* =======================================================
        GET STORIES OF A SPECIFIC USER
        
-       Example:
        GET /api/stories?userId=abc123
        ======================================================= */
 
@@ -70,19 +79,18 @@ export async function GET(req: Request) {
 
       return Response.json({
         user: stories[0]?.user ?? null,
+
         stories: stories.map((story) => ({
           id: story.id,
           mediaUrl: story.mediaUrl,
           caption: story.caption,
           createdAt: story.createdAt,
           expiresAt: story.expiresAt,
-
-          /*
-           * If you add resourceType to Prisma:
-           */
           resourceType: story.resourceType,
 
-          isOwnStory: story.userId === currentUser.id,
+          isViewed: false,
+
+          isOwnStory: story.userId === currentUserId,
         })),
       });
     }
@@ -109,7 +117,7 @@ export async function GET(req: Request) {
 
         views: {
           where: {
-            userId: currentUser.id,
+            userId: currentUserId,
           },
 
           select: {
@@ -119,7 +127,10 @@ export async function GET(req: Request) {
       },
 
       /*
-       * Oldest → newest inside each user group.
+       * Oldest → newest.
+       *
+       * This means stories inside a user's group
+       * will play in chronological order.
        */
       orderBy: {
         createdAt: "asc",
@@ -127,8 +138,8 @@ export async function GET(req: Request) {
     });
 
     /* =======================================================
-   GROUP STORIES BY USER
-   ======================================================= */
+       STORY TYPES
+       ======================================================= */
 
     type StoryData = {
       id: string;
@@ -136,7 +147,7 @@ export async function GET(req: Request) {
       caption: string | null;
       createdAt: Date;
       expiresAt: Date;
-      resourceType: string;
+      resourceType: "image" | "video";
       isViewed: boolean;
     };
 
@@ -150,10 +161,17 @@ export async function GET(req: Request) {
       stories: StoryData[];
     };
 
+    /* =======================================================
+       GROUP STORIES BY USER
+       ======================================================= */
+
     const groupedStories = new Map<string, StoryGroup>();
 
     for (const story of stories) {
       const existing = groupedStories.get(story.userId);
+
+      const resourceType: "image" | "video" =
+        story.resourceType === "video" ? "video" : "image";
 
       const storyData: StoryData = {
         id: story.id,
@@ -161,7 +179,7 @@ export async function GET(req: Request) {
         caption: story.caption,
         createdAt: story.createdAt,
         expiresAt: story.expiresAt,
-        resourceType: story.resourceType,
+        resourceType,
         isViewed: story.views.length > 0,
       };
 
@@ -176,35 +194,32 @@ export async function GET(req: Request) {
     }
 
     /* =======================================================
-   ALWAYS ADD CURRENT USER
-   ======================================================= */
+       ALWAYS ADD CURRENT USER
+       ======================================================= */
 
-    if (!groupedStories.has(currentUser.id)) {
-      const currentUserData = await prisma.user.findUnique({
-        where: {
+    if (!groupedStories.has(currentUserId)) {
+      groupedStories.set(currentUserId, {
+        user: {
           id: currentUser.id,
+          username: currentUser.username,
+          imageUrl: currentUser.imageUrl,
         },
-        select: {
-          id: true,
-          username: true,
-          imageUrl: true,
-        },
-      });
 
-      if (currentUserData) {
-        groupedStories.set(currentUser.id, {
-          user: currentUserData,
-          stories: [],
-        });
-      }
+        stories: [],
+      });
     }
 
     /* =======================================================
-   CREATE FINAL RESPONSE
-   ======================================================= */
+       CREATE FINAL RESPONSE
+       ======================================================= */
 
     const result = Array.from(groupedStories.values()).map((group) => {
-      const isOwnStory = group.user.id === currentUser.id;
+      const isOwnStory = group.user.id === currentUserId;
+
+      /*
+       * Current user's stories don't need a
+       * seen/unseen ring.
+       */
 
       const isSeen = isOwnStory
         ? false
@@ -223,26 +238,24 @@ export async function GET(req: Request) {
     });
 
     /* =======================================================
-   CURRENT USER ALWAYS FIRST
-   ======================================================= */
+       CURRENT USER ALWAYS FIRST
+       ======================================================= */
 
     result.sort((a, b) => {
       if (a.isOwnStory) return -1;
+
       if (b.isOwnStory) return 1;
 
       return 0;
     });
 
-    return Response.json({
-      currentUserId: currentUser.id,
-      stories: result,
-    });
     /* =======================================================
        RESPONSE
        ======================================================= */
 
     return Response.json({
-      currentUserId: currentUser.id,
+      currentUserId,
+
       stories: result,
     });
   } catch (error) {
@@ -251,140 +264,6 @@ export async function GET(req: Request) {
     return Response.json(
       {
         error: "Failed to fetch stories",
-      },
-      {
-        status: 500,
-      },
-    );
-  }
-}
-
-/* =========================================================
-   POST /api/stories
-   ========================================================= */
-
-export async function POST(req: Request) {
-  try {
-    const { userId: clerkId } = await auth();
-
-    if (!clerkId) {
-      return Response.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    /* =======================================================
-       FIND CURRENT USER
-       ======================================================= */
-
-    const currentUser = await prisma.user.findUnique({
-      where: {
-        clerkId,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!currentUser) {
-      return Response.json({ error: "User not found" }, { status: 404 });
-    }
-
-    /* =======================================================
-       READ REQUEST BODY
-       ======================================================= */
-
-    const body = await req.json();
-
-    const { mediaUrl, caption, resourceType } = body;
-
-    /* =======================================================
-       VALIDATE MEDIA
-       ======================================================= */
-
-    if (!mediaUrl || typeof mediaUrl !== "string") {
-      return Response.json(
-        {
-          error: "Story media is required",
-        },
-        {
-          status: 400,
-        },
-      );
-    }
-
-    /* =======================================================
-       VALIDATE RESOURCE TYPE
-       ======================================================= */
-
-    const validResourceType = resourceType === "video" ? "video" : "image";
-
-    /* =======================================================
-       STORY EXPIRATION
-       ======================================================= */
-
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    /* =======================================================
-       CREATE STORY
-       ======================================================= */
-
-    const story = await prisma.story.create({
-      data: {
-        mediaUrl,
-
-        caption:
-          typeof caption === "string" && caption.trim().length > 0
-            ? caption.trim()
-            : null,
-
-        resourceType: validResourceType,
-
-        expiresAt,
-
-        userId: currentUser.id,
-      },
-
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            imageUrl: true,
-          },
-        },
-      },
-    });
-
-    /* =======================================================
-       RESPONSE
-       ======================================================= */
-
-    return Response.json(
-      {
-        message: "Story created successfully",
-
-        story: {
-          id: story.id,
-          mediaUrl: story.mediaUrl,
-          caption: story.caption,
-          resourceType: story.resourceType,
-          createdAt: story.createdAt,
-          expiresAt: story.expiresAt,
-
-          user: story.user,
-
-          isOwnStory: true,
-        },
-      },
-      {
-        status: 201,
-      },
-    );
-  } catch (error) {
-    console.error("POST /api/stories error:", error);
-
-    return Response.json(
-      {
-        error: "Failed to create story",
       },
       {
         status: 500,
