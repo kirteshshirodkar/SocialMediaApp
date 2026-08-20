@@ -515,7 +515,7 @@ function StoryModal({
 
             </div>
 
-            <span className="text-sm font-medium text-white">
+            <span className="text-sm font-medium text-black">
               {story.isOwnStory
                 ? "Your Story"
                 : story.user.username}
