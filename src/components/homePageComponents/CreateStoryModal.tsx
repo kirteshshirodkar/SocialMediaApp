@@ -76,7 +76,12 @@ export default function CreateStoryModal({ open, onClose, onCreated }: Props) {
       setLoading(true);
       setError("");
 
+      /* =====================================================
+       STEP 1: Upload to Cloudinary
+       ===================================================== */
+
       const formData = new FormData();
+
       formData.append("file", file);
 
       const uploadResponse = await fetch("/api/stories/upload", {
@@ -84,32 +89,64 @@ export default function CreateStoryModal({ open, onClose, onCreated }: Props) {
         body: formData,
       });
 
-      const uploadData = await uploadResponse.json();
+      const uploadText = await uploadResponse.text();
+
+      const uploadData = uploadText ? JSON.parse(uploadText) : {};
 
       if (!uploadResponse.ok) {
-        throw new Error(uploadData.error || "Failed to upload story");
+        throw new Error(
+          uploadData.error || `Upload failed (${uploadResponse.status})`,
+        );
       }
+
+      if (!uploadData.mediaUrl) {
+        throw new Error("No media URL returned from upload.");
+      }
+
+      /* =====================================================
+       STEP 2: Create Story record
+       ===================================================== */
 
       const storyResponse = await fetch("/api/stories", {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           mediaUrl: uploadData.mediaUrl,
+
           resourceType: uploadData.resourceType,
+
           caption: caption.trim() || null,
         }),
       });
 
-      const storyData = await storyResponse.json();
+      const storyText = await storyResponse.text();
+
+      const storyData = storyText ? JSON.parse(storyText) : {};
 
       if (!storyResponse.ok) {
-        throw new Error(storyData.error || "Failed to create story");
+        throw new Error(
+          storyData.error || `Failed to create story (${storyResponse.status})`,
+        );
       }
 
+      console.log("Story created:", storyData);
+
+      /* =====================================================
+       SUCCESS
+       ===================================================== */
+
       reset();
+
       onClose();
+
+      /*
+       * Reload GET /api/stories
+       */
+
       onCreated();
     } catch (error) {
       console.error("Create story error:", error);
