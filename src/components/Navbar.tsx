@@ -40,7 +40,7 @@ export default function Navbar() {
       link: username ? `/profile/${username}` : "/profile",
     },
     { id: "add posts", icon: Plus, link: "/createPost" },
-    { id: "search", icon: Search, link: "/search" },
+    { id: "explore", icon: Search, link: "/explore" },
     { id: "notifications", icon: Flag, link: "/notifications" },
     { id: "settings", icon: Settings, link: "/settings" },
   ];
