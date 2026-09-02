@@ -26,6 +26,12 @@ model User {
 
   stories    Story[]
   storyViews StoryView[]
+
+  // Users who follow this user
+  followers Follow[] @relation("UserFollowers")
+
+  // Users this user follows
+  following Follow[] @relation("UserFollowing")
 }
 
 model Post {
@@ -113,4 +119,21 @@ model StoryView {
   @@unique([storyId, userId])
   @@index([storyId])
   @@index([userId])
+}
+
+model Follow {
+  id String @id @default(cuid())
+
+  followerId String
+  follower   User   @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+
+  followingId String
+  following   User   @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([createdAt])
 }
