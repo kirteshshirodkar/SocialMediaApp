@@ -102,8 +102,26 @@ export async function GET(req: Request) {
     const stories = await prisma.story.findMany({
       where: {
         expiresAt: {
-          gt: now,
+          gt: new Date(),
         },
+
+        OR: [
+          // Current user's own stories
+          {
+            userId: currentUserId,
+          },
+
+          // Stories from users followed by the current user
+          {
+            user: {
+              followers: {
+                some: {
+                  followerId: currentUserId,
+                },
+              },
+            },
+          },
+        ],
       },
 
       include: {
@@ -119,24 +137,17 @@ export async function GET(req: Request) {
           where: {
             userId: currentUserId,
           },
-
           select: {
             id: true,
+            userId: true,
           },
         },
       },
 
-      /*
-       * Oldest → newest.
-       *
-       * This means stories inside a user's group
-       * will play in chronological order.
-       */
       orderBy: {
         createdAt: "asc",
       },
     });
-
     /* =======================================================
        STORY TYPES
        ======================================================= */
@@ -282,10 +293,7 @@ export async function POST(req: Request) {
     const { userId: clerkId } = await auth();
 
     if (!clerkId) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     /* =====================================================
@@ -302,10 +310,7 @@ export async function POST(req: Request) {
     });
 
     if (!currentUser) {
-      return Response.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return Response.json({ error: "User not found" }, { status: 404 });
     }
 
     const currentUserId = currentUser.id;
@@ -316,27 +321,20 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    const {
-      mediaUrl,
-      caption,
-      resourceType,
-    } = body;
+    const { mediaUrl, caption, resourceType } = body;
 
     /* =====================================================
        VALIDATE MEDIA URL
        ===================================================== */
 
-    if (
-      !mediaUrl ||
-      typeof mediaUrl !== "string"
-    ) {
+    if (!mediaUrl || typeof mediaUrl !== "string") {
       return Response.json(
         {
           error: "Story media is required",
         },
         {
           status: 400,
-        }
+        },
       );
     }
 
@@ -344,18 +342,13 @@ export async function POST(req: Request) {
        NORMALIZE RESOURCE TYPE
        ===================================================== */
 
-    const validResourceType =
-      resourceType === "video"
-        ? "video"
-        : "image";
+    const validResourceType = resourceType === "video" ? "video" : "image";
 
     /* =====================================================
        STORY EXPIRES AFTER 24 HOURS
        ===================================================== */
 
-    const expiresAt = new Date(
-      Date.now() + 24 * 60 * 60 * 1000
-    );
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
     /* =====================================================
        CREATE STORY
@@ -370,8 +363,7 @@ export async function POST(req: Request) {
         mediaUrl,
 
         caption:
-          typeof caption === "string" &&
-          caption.trim().length > 0
+          typeof caption === "string" && caption.trim().length > 0
             ? caption.trim()
             : null,
 
@@ -406,10 +398,7 @@ export async function POST(req: Request) {
           mediaUrl: story.mediaUrl,
           caption: story.caption,
 
-          resourceType:
-            story.resourceType === "video"
-              ? "video"
-              : "image",
+          resourceType: story.resourceType === "video" ? "video" : "image",
 
           createdAt: story.createdAt,
           expiresAt: story.expiresAt,
@@ -422,13 +411,10 @@ export async function POST(req: Request) {
       },
       {
         status: 201,
-      }
+      },
     );
   } catch (error) {
-    console.error(
-      "POST /api/stories error:",
-      error
-    );
+    console.error("POST /api/stories error:", error);
 
     return Response.json(
       {
@@ -436,7 +422,7 @@ export async function POST(req: Request) {
       },
       {
         status: 500,
-      }
+      },
     );
   }
 }
